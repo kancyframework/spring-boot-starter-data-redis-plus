@@ -88,6 +88,29 @@ public interface RedisService {
     Optional<String> lpop(String key);
 
     /**
+     * 移除并返回列表 key 的尾元素。
+     */
+    Optional<String> rpop(String key);
+
+    /**
+     * BRPOP 是列表的阻塞式(blocking)弹出原语。
+     * 弹出第一个非空列表的尾部元素。
+     * @param timeout seconds to block.
+     * @param key
+     * @return
+     */
+    List<String> brpop(int timeout, String key);
+
+    /**
+     * BLPOP 是列表的阻塞式(blocking)弹出原语。
+     * 弹出第一个非空列表的头元素。
+     * @param timeout seconds to block.
+     * @param key
+     * @return
+     */
+    List<String> blpop(int timeout, String key);
+
+    /**
      * 同时将多个 field-value (域-值)对设置到哈希表 key 中。
      */
     boolean hmset(String key, Map<String, Object> hashMap);

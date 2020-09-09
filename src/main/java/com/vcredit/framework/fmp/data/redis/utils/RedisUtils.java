@@ -1,6 +1,8 @@
 package com.vcredit.framework.fmp.data.redis.utils;
 
 import com.vcredit.framework.fmp.data.redis.service.RedisService;
+import com.vcredit.framework.fmp.data.redis.service.impl.RedisServiceImpl;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.util.CollectionUtils;
 
 import java.util.*;
@@ -15,8 +17,15 @@ public class RedisUtils {
 
     private static RedisService redisService;
 
-    public static void setRedisService(RedisService redisService) {
-        RedisUtils.redisService = redisService;
+    private static StringRedisTemplate redisTemplate;
+
+    public static StringRedisTemplate getRedisTemplate() {
+        return redisTemplate;
+    }
+
+    public static void setRedisTemplate(StringRedisTemplate redisTemplate) {
+        RedisUtils.redisTemplate = redisTemplate;
+        RedisUtils.redisService = new RedisServiceImpl(redisTemplate);
     }
 
     /**
@@ -132,6 +141,26 @@ public class RedisUtils {
      */
     public static Optional<String> lpop(String key){
         return redisService.lpop(key);
+    }
+    /**
+     * BRPOP 是列表的阻塞式(blocking)弹出原语。
+     * 弹出第一个非空列表的尾部元素。
+     * @param timeout seconds to block.
+     * @param key
+     * @return
+     */
+    public static List<String> brpop(int timeout, String key){
+        return redisService.brpop(timeout, key);
+    }
+    /**
+     * BLPOP 是列表的阻塞式(blocking)弹出原语。
+     * 弹出第一个非空列表的头元素。
+     * @param timeout seconds to block.
+     * @param key
+     * @return
+     */
+    public static List<String> blpop(int timeout, String key){
+        return redisService.blpop(timeout, key);
     }
 
     /**

@@ -174,14 +174,9 @@ public class RedisServiceImpl implements RedisService {
      */
     @Override
     public Optional<String> get(String key) {
-        try{
-            String result = redisTemplate.execute((RedisCallback<String>)
-                    connection -> serializer.deserialize(connection.get(serializer.serialize(key))));
-            return Optional.ofNullable(result);
-        }catch(Exception e){
-            handleException(e);
-            return Optional.empty();
-        }
+        String result = redisTemplate.execute((RedisCallback<String>)
+                connection -> serializer.deserialize(connection.get(serializer.serialize(key))));
+        return Optional.ofNullable(result);
     }
 
     /**
@@ -193,13 +188,8 @@ public class RedisServiceImpl implements RedisService {
     @Override
     public <T> Optional<T> get(String key, Class<T> classType) {
         Optional<String> optional = get(key);
-        try {
-            if (optional.isPresent()){
-                return Optional.ofNullable(parseJsonString(optional.get(), classType));
-            }
-        } catch (Exception e) {
-            handleException(e);
-            return Optional.empty();
+        if (optional.isPresent()){
+            return Optional.ofNullable(parseJsonString(optional.get(), classType));
         }
         return Optional.empty();
     }
@@ -300,14 +290,53 @@ public class RedisServiceImpl implements RedisService {
      */
     @Override
     public Optional<String> lpop(String key) {
-        try{
-            String result = redisTemplate.execute((RedisCallback<String>)
-                    connection -> serializer.deserialize(connection.lPop(serializer.serialize(key))));
-            return Optional.ofNullable(result);
-        }catch(Exception e){
-            handleException(e);
-            return Optional.empty();
-        }
+        String result = redisTemplate.execute((RedisCallback<String>)
+                connection -> serializer.deserialize(connection.lPop(serializer.serialize(key))));
+        return Optional.ofNullable(result);
+    }
+
+    /**
+     * 移除并返回列表 key 的尾元素。
+     *
+     * @param key
+     */
+    @Override
+    public Optional<String> rpop(String key) {
+        String result = redisTemplate.execute((RedisCallback<String>)
+                connection -> serializer.deserialize(connection.rPop(serializer.serialize(key))));
+        return Optional.ofNullable(result);
+    }
+
+    /**
+     * 移除并返回列表 key 的尾元素。
+     *
+     * @param key
+     */
+    @Override
+    public List<String> brpop(int timeout, String key) {
+        List<byte[]> bytesList = redisTemplate.execute((RedisCallback<List<byte[]>>)
+                connection -> connection.bRPop(timeout, serializer.serialize(key)));
+        List<String> stringList = new ArrayList<>(bytesList.size());
+        bytesList.forEach(bytes -> {
+            stringList.add(serializer.deserialize(bytes));
+        });
+        return stringList;
+    }
+
+    /**
+     * 移除并返回列表 key 的尾元素。
+     *
+     * @param key
+     */
+    @Override
+    public List<String> blpop(int timeout, String key) {
+        List<byte[]> bytesList = redisTemplate.execute((RedisCallback<List<byte[]>>)
+                connection -> connection.bLPop(timeout, serializer.serialize(key)));
+        List<String> stringList = new ArrayList<>(bytesList.size());
+        bytesList.forEach(bytes -> {
+            stringList.add(serializer.deserialize(bytes));
+        });
+        return stringList;
     }
 
     /**
@@ -319,7 +348,6 @@ public class RedisServiceImpl implements RedisService {
     @Override
     public boolean hmset(String key, Map<String, Object> hashMap) {
         try{
-
             Map<String, String> stringMap = new HashMap<>();
             hashMap.entrySet().stream().forEach(e -> stringMap.put(e.getKey(), toJsonString(e.getValue())));
 
@@ -347,22 +375,17 @@ public class RedisServiceImpl implements RedisService {
      */
     @Override
     public List<String> hmget(String key) {
-        try{
-            return redisTemplate.execute(new SessionCallback<List<String>>() {
-                @Override
-                public <K, V> List<String> execute(RedisOperations<K, V> operations) throws DataAccessException{
-                    BoundHashOperations<String, String, String> hv = ((RedisTemplate) operations).boundHashOps(key);
-                    Set<String> set = hv.keys();
-                    if(!CollectionUtils.isEmpty(set)){
-                        return hv.multiGet(set);
-                    }
-                    return Collections.emptyList();
+        return redisTemplate.execute(new SessionCallback<List<String>>() {
+            @Override
+            public <K, V> List<String> execute(RedisOperations<K, V> operations) throws DataAccessException{
+                BoundHashOperations<String, String, String> hv = ((RedisTemplate) operations).boundHashOps(key);
+                Set<String> set = hv.keys();
+                if(!CollectionUtils.isEmpty(set)){
+                    return hv.multiGet(set);
                 }
-            });
-        }catch(Exception e){
-            handleException(e);
-            return Collections.emptyList();
-        }
+                return Collections.emptyList();
+            }
+        });
     }
 
     /**
@@ -399,19 +422,14 @@ public class RedisServiceImpl implements RedisService {
      */
     @Override
     public Optional<String> hget(String key, String hashKey) {
-        try{
-            String result = redisTemplate.execute(new SessionCallback<String>() {
-                @Override
-                public <K, V> String execute(RedisOperations<K, V> operations) throws DataAccessException {
-                    BoundHashOperations<String, String, String> hv = ((RedisTemplate) operations).boundHashOps(key);
-                    return hv.get(hashKey);
-                }
-            });
-            return Optional.ofNullable(result);
-        }catch(Exception e){
-            handleException(e);
-            return Optional.empty();
-        }
+        String result = redisTemplate.execute(new SessionCallback<String>() {
+            @Override
+            public <K, V> String execute(RedisOperations<K, V> operations) throws DataAccessException {
+                BoundHashOperations<String, String, String> hv = ((RedisTemplate) operations).boundHashOps(key);
+                return hv.get(hashKey);
+            }
+        });
+        return Optional.ofNullable(result);
     }
 
     /**
@@ -448,18 +466,13 @@ public class RedisServiceImpl implements RedisService {
      */
     @Override
     public Set<String> keys(String pattern) {
-        try{
-            return redisTemplate.execute(new SessionCallback<Set>() {
-                @Override
-                public <K, V> Set execute(RedisOperations<K, V> operations) throws DataAccessException{
-                    Set<String> keySet = ((StringRedisTemplate) operations).keys(pattern);
-                    return keySet;
-                }
-            });
-        }catch(Exception e){
-            handleException(e);
-            return Collections.emptySet();
-        }
+        return redisTemplate.execute(new SessionCallback<Set>() {
+            @Override
+            public <K, V> Set execute(RedisOperations<K, V> operations) throws DataAccessException{
+                Set<String> keySet = ((StringRedisTemplate) operations).keys(pattern);
+                return keySet;
+            }
+        });
     }
 
     /**

@@ -33,7 +33,7 @@ public class RedisPlusAutoConfiguration {
     @ConditionalOnMissingBean
     public RedisService redisService(StringRedisTemplate stringRedisTemplate) {
         RedisServiceImpl redisService = new RedisServiceImpl(stringRedisTemplate);
-        RedisUtils.setRedisService(redisService);
+        RedisUtils.setRedisTemplate(stringRedisTemplate);
         return redisService;
     }
 
