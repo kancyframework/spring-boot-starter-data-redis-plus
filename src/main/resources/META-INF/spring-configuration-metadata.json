@@ -1,0 +1,31 @@
+{
+  "groups": [
+    {
+      "name": "spring.redis.cache",
+      "type": "com.vcredit.framework.fmp.data.redis.properties.RedisCacheProperties",
+      "sourceType": "com.vcredit.framework.fmp.data.redis.config.RedisPlusCachingConfiguration",
+      "sourceMethod": "redisCacheProperties()"
+    }
+  ],
+  "properties": [
+    {
+      "name": "spring.redis.cache.key-prefix",
+      "type": "java.lang.String",
+      "description": "前缀 = ${project}'keyPrefix'",
+      "sourceType": "com.vcredit.framework.fmp.data.redis.properties.RedisCacheProperties"
+    },
+    {
+      "name": "spring.redis.cache.project",
+      "type": "java.lang.String",
+      "description": "命名空间",
+      "sourceType": "com.vcredit.framework.fmp.data.redis.properties.RedisCacheProperties"
+    },
+    {
+      "name": "spring.redis.cache.topics",
+      "type": "java.util.Map<java.lang.String,com.vcredit.framework.fmp.data.redis.properties.RedisCacheProperties$Config>",
+      "description": "缓存配置",
+      "sourceType": "com.vcredit.framework.fmp.data.redis.properties.RedisCacheProperties"
+    }
+  ],
+  "hints": []
+}

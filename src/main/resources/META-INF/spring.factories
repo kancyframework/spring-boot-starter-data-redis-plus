@@ -1,0 +1,3 @@
+org.springframework.boot.autoconfigure.EnableAutoConfiguration=\
+  com.vcredit.framework.fmp.data.redis.config.RedisPlusAutoConfiguration\
+  com.vcredit.framework.fmp.data.redis.config.RedisPlusCachingConfiguration
