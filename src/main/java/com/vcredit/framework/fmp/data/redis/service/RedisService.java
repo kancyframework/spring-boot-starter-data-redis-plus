@@ -63,6 +63,11 @@ public interface RedisService {
     boolean expire(String key, long expire);
 
     /**
+     * 设置key值所对应的对象的list
+     */
+    boolean setList(String key, List<Object> list);
+
+    /**
      * 返回key值所对应的对象的list
      */
     <T> List<T> getList(String key, Class<T> clz);
@@ -127,6 +132,14 @@ public interface RedisService {
      * 判断是否存在key 。
      */
     boolean exists(String key);
+
+    /**
+     * redis sadd
+     * @param key
+     * @param values
+     * @return
+     */
+    boolean sadd(String key, Object ... values);
 
     /**
      * redis zadd
@@ -196,7 +209,7 @@ public interface RedisService {
      *
      * @return
      */
-    long expireTime(String key);
+    long getExpireTime(String key);
 
     /**
      * 获取过期时间
@@ -206,5 +219,6 @@ public interface RedisService {
      *
      * @return
      */
-    long expireTime(String key, TimeUnit timeUnit);
+    long getExpireTime(String key, TimeUnit timeUnit);
+
 }

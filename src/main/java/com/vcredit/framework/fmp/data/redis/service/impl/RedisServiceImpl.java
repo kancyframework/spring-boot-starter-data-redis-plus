@@ -11,6 +11,7 @@ import org.springframework.data.redis.core.*;
 import org.springframework.data.redis.core.types.Expiration;
 import org.springframework.data.redis.serializer.RedisSerializer;
 import org.springframework.data.redis.serializer.StringRedisSerializer;
+import org.springframework.util.Assert;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
 
@@ -32,7 +33,7 @@ public class RedisServiceImpl implements RedisService {
 
     private final StringRedisTemplate redisTemplate;
 
-    private RedisSerializer<String> serializer = new StringRedisSerializer();
+    private final RedisSerializer<String> serializer = new StringRedisSerializer();
 
     public RedisServiceImpl(StringRedisTemplate redisTemplate) {
         this.redisTemplate = redisTemplate;
@@ -53,6 +54,9 @@ public class RedisServiceImpl implements RedisService {
         return $.readJsonAsList(jsonArrayStr, classType);
     }
 
+    private void handleException(Exception e) {
+        log.warn(e.getMessage());
+    }
 
     /**
      * 将字符串值 value 关联到 key
@@ -66,6 +70,7 @@ public class RedisServiceImpl implements RedisService {
             return redisTemplate.execute((RedisCallback<Boolean>)
                     connection -> connection.set(serializer.serialize(key), serializer.serialize(toJsonString(value))));
         }catch(Exception e){
+            handleException(e);
             return false;
         }
     }
@@ -102,6 +107,7 @@ public class RedisServiceImpl implements RedisService {
                 return true;
             });
         }catch(Exception e){
+            handleException(e);
             return false;
         }
     }
@@ -122,6 +128,7 @@ public class RedisServiceImpl implements RedisService {
                 return result;
             });
         }catch(Exception e){
+            handleException(e);
             return false;
         }
     }
@@ -155,6 +162,7 @@ public class RedisServiceImpl implements RedisService {
                             Expiration.milliseconds(duration.toMillis()), RedisStringCommands.SetOption.SET_IF_ABSENT);
             return redisTemplate.execute(callback);
         }catch(Exception e){
+            handleException(e);
             return false;
         }
     }
@@ -171,6 +179,7 @@ public class RedisServiceImpl implements RedisService {
                     connection -> serializer.deserialize(connection.get(serializer.serialize(key))));
             return Optional.ofNullable(result);
         }catch(Exception e){
+            handleException(e);
             return Optional.empty();
         }
     }
@@ -189,6 +198,7 @@ public class RedisServiceImpl implements RedisService {
                 return Optional.ofNullable(parseJsonString(optional.get(), classType));
             }
         } catch (Exception e) {
+            handleException(e);
             return Optional.empty();
         }
         return Optional.empty();
@@ -209,8 +219,23 @@ public class RedisServiceImpl implements RedisService {
                 return result;
             });
         }catch(Exception e){
+            handleException(e);
             return false;
         }
+    }
+
+    /**
+     * 设置key值所对应的对象的list
+     * @param key
+     * @param list
+     * @return
+     */
+    @Override
+    public boolean setList(String key, List<Object> list) {
+        if (!CollectionUtils.isEmpty(list)){
+            return set(key, list);
+        }
+        return false;
     }
 
     /**
@@ -243,6 +268,7 @@ public class RedisServiceImpl implements RedisService {
             });
             return result;
         }catch(Exception e){
+            handleException(e);
             return 0L;
         }
     }
@@ -262,6 +288,7 @@ public class RedisServiceImpl implements RedisService {
             });
             return result;
         }catch(Exception e){
+            handleException(e);
             return 0L;
         }
     }
@@ -278,6 +305,7 @@ public class RedisServiceImpl implements RedisService {
                     connection -> serializer.deserialize(connection.lPop(serializer.serialize(key))));
             return Optional.ofNullable(result);
         }catch(Exception e){
+            handleException(e);
             return Optional.empty();
         }
     }
@@ -307,6 +335,7 @@ public class RedisServiceImpl implements RedisService {
             });
             return result;
         }catch(Exception e){
+            handleException(e);
             return false;
         }
     }
@@ -331,6 +360,7 @@ public class RedisServiceImpl implements RedisService {
                 }
             });
         }catch(Exception e){
+            handleException(e);
             return Collections.emptyList();
         }
     }
@@ -356,6 +386,7 @@ public class RedisServiceImpl implements RedisService {
                 }
             });
         }catch(Exception e){
+            handleException(e);
             return false;
         }
     }
@@ -378,6 +409,7 @@ public class RedisServiceImpl implements RedisService {
             });
             return Optional.ofNullable(result);
         }catch(Exception e){
+            handleException(e);
             return Optional.empty();
         }
     }
@@ -399,6 +431,7 @@ public class RedisServiceImpl implements RedisService {
                 }
             });
         }catch(Exception e){
+            handleException(e);
             return 0L;
         }
     }
@@ -424,6 +457,7 @@ public class RedisServiceImpl implements RedisService {
                 }
             });
         }catch(Exception e){
+            handleException(e);
             return Collections.emptySet();
         }
     }
@@ -440,12 +474,13 @@ public class RedisServiceImpl implements RedisService {
                 try{
                     connection.del(serializer.serialize(key));
                 }catch(Exception ex){
-                    return false;
+                    handleException(ex);
                 }
                 return true;
             });
             return result;
         }catch(Exception e){
+            handleException(e);
             return false;
         }
     }
@@ -461,6 +496,31 @@ public class RedisServiceImpl implements RedisService {
             return redisTemplate.execute((RedisCallback<Boolean>)
                     connection -> connection.exists(serializer.serialize(key)));
         }catch(Exception e){
+            handleException(e);
+            return false;
+        }
+    }
+
+    /*
+     * @param key
+     * @param values
+     * */
+    @Override
+    public boolean sadd(String key, Object ... values){
+        try{
+            Assert.notEmpty(values, "sadd values isEmpty");
+            return redisTemplate.execute(new SessionCallback<Boolean>() {
+                @Override
+                public <K, V> Boolean execute(RedisOperations<K, V> operations) throws DataAccessException{
+                    BoundSetOperations<String, String> bz = ((RedisTemplate) operations).boundSetOps(key);
+                    for(int i = 0; i < values.length; i++){
+                        bz.add(toJsonString(values[i]));
+                    }
+                    return true;
+                }
+            });
+        }catch(Exception e){
+            handleException(e);
             return false;
         }
     }
@@ -485,6 +545,7 @@ public class RedisServiceImpl implements RedisService {
                 }
             });
         }catch(Exception e){
+            handleException(e);
             return false;
         }
     }
@@ -498,6 +559,7 @@ public class RedisServiceImpl implements RedisService {
     @Override
     public boolean zadd(String key, List<Object> values) {
         try{
+            Assert.notEmpty(values, "zadd values isEmpty");
             return redisTemplate.execute(new SessionCallback<Boolean>() {
                 @Override
                 public <K, V> Boolean execute(RedisOperations<K, V> operations) throws DataAccessException{
@@ -509,6 +571,7 @@ public class RedisServiceImpl implements RedisService {
                 }
             });
         }catch(Exception e){
+            handleException(e);
             return false;
         }
     }
@@ -531,6 +594,7 @@ public class RedisServiceImpl implements RedisService {
                 }
             });
         }catch(Exception e){
+            handleException(e);
             return false;
         }
     }
@@ -556,6 +620,7 @@ public class RedisServiceImpl implements RedisService {
                 }
             });
         }catch(Exception e){
+            handleException(e);
             return false;
         }
     }
@@ -616,6 +681,7 @@ public class RedisServiceImpl implements RedisService {
                 }
             });
         }catch(Exception e){
+            handleException(e);
             return false;
         }
     }
@@ -650,6 +716,7 @@ public class RedisServiceImpl implements RedisService {
                 }
             });
         }catch(Exception e){
+            handleException(e);
             return false;
         }
     }
@@ -674,6 +741,7 @@ public class RedisServiceImpl implements RedisService {
                     String.valueOf(initStock - 1), String.valueOf(seconds));
             return Objects.equals(String.valueOf(result), "1");
         } catch (Exception e) {
+            handleException(e);
             return false;
         }
     }
@@ -685,7 +753,7 @@ public class RedisServiceImpl implements RedisService {
      * @return
      */
     @Override
-    public long expireTime(String key) {
+    public long getExpireTime(String key) {
         return redisTemplate.getExpire(key);
     }
 
@@ -697,7 +765,7 @@ public class RedisServiceImpl implements RedisService {
      * @return
      */
     @Override
-    public long expireTime(String key, TimeUnit timeUnit) {
+    public long getExpireTime(String key, TimeUnit timeUnit) {
         return redisTemplate.getExpire(key, timeUnit);
     }
 }
